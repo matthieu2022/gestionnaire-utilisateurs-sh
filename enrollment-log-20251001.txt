@@ -4,3 +4,41 @@
 [2025-10-01 16:32:15] [INFO] Récupération des inscriptions en attente...
 [2025-10-01 16:32:15] [INFO] Trouvé 0 inscription(s) en attente
 [2025-10-01 16:32:15] [INFO] Aucune inscription à traiter
+[2025-10-01 16:34:16] [INFO] ====== DÉBUT DU TRAITEMENT ======
+[2025-10-01 16:34:16] [INFO] Connexion à Supabase: https://neaxxyzhggofkmdpfgjg.supabase.co
+[2025-10-01 16:34:16] [WARN] PowerShell version 5 détectée. Installation de PnP.PowerShell 1.12.0 (compatible PS 5.1)...
+[2025-10-01 16:34:33] [INFO] Récupération des inscriptions en attente...
+[2025-10-01 16:34:33] [INFO] Trouvé 0 inscription(s) en attente
+[2025-10-01 16:34:33] [INFO] Aucune inscription à traiter
+[2025-10-01 16:37:07] [INFO] ====== DÉBUT DU TRAITEMENT ======
+[2025-10-01 16:37:07] [INFO] Connexion à Supabase: https://neaxxyzhggofkmdpfgjg.supabase.co
+[2025-10-01 16:37:07] [WARN] PowerShell version 5 détectée. Installation de PnP.PowerShell 1.12.0 (compatible PS 5.1)...
+[2025-10-01 16:37:07] [INFO] Récupération des inscriptions en attente...
+[2025-10-01 16:37:08] [INFO] Trouvé 3 inscription(s) en attente
+[2025-10-01 16:37:08] [INFO] ----------------------------------------
+[2025-10-01 16:37:08] [INFO] Traitement: CRAWFORD Vale -> RET AC 2025/2026
+[2025-10-01 16:37:08] [INFO] Connexion au site: https://neosphere83.sharepoint.com/sites/RETAC20252026
+[2025-10-01 16:37:29] [ERROR] Erreur lors de l'ajout: User canceled authentication. 
+[2025-10-01 16:37:29] [ERROR] Échec: No connection to disconnect
+[2025-10-01 16:37:31] [INFO] ----------------------------------------
+[2025-10-01 16:37:31] [INFO] Traitement: KENNEDY Echo -> RET AC 2025/2026
+[2025-10-01 16:37:31] [INFO] Connexion au site: https://neosphere83.sharepoint.com/sites/RETAC20252026
+[2025-10-01 16:37:47] [ERROR] Erreur lors de l'ajout: User canceled authentication. 
+[2025-10-01 16:37:47] [ERROR] Échec: No connection to disconnect
+[2025-10-01 16:37:49] [INFO] ----------------------------------------
+[2025-10-01 16:37:49] [INFO] Traitement: HENRY Makenzie -> RET AC 2025/2026
+[2025-10-01 16:37:49] [INFO] Connexion au site: https://neosphere83.sharepoint.com/sites/RETAC20252026
+[2025-10-01 16:37:51] [ERROR] Erreur lors de l'ajout: User canceled authentication. 
+[2025-10-01 16:37:51] [ERROR] Échec: No connection to disconnect
+[2025-10-01 16:38:12] [INFO] ====== DÉBUT DU TRAITEMENT ======
+[2025-10-01 16:38:12] [INFO] Connexion à Supabase: https://neaxxyzhggofkmdpfgjg.supabase.co
+[2025-10-01 16:38:12] [WARN] PowerShell version 5 détectée. Installation de PnP.PowerShell 1.12.0 (compatible PS 5.1)...
+[2025-10-01 16:38:12] [INFO] Récupération des inscriptions en attente...
+[2025-10-01 16:38:13] [INFO] Trouvé 0 inscription(s) en attente
+[2025-10-01 16:38:13] [INFO] Aucune inscription à traiter
+[2025-10-01 16:42:09] [INFO] ====== DÉBUT DU TRAITEMENT ======
+[2025-10-01 16:42:09] [INFO] Connexion à Supabase: https://neaxxyzhggofkmdpfgjg.supabase.co
+[2025-10-01 16:42:09] [WARN] PowerShell version 5 détectée. Installation de PnP.PowerShell 1.12.0 (compatible PS 5.1)...
+[2025-10-01 16:42:09] [INFO] Récupération des inscriptions en attente...
+[2025-10-01 16:42:09] [INFO] Trouvé 0 inscription(s) en attente
+[2025-10-01 16:42:09] [INFO] Aucune inscription à traiter

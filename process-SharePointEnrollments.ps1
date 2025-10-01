@@ -55,10 +55,51 @@ function Invoke-SupabaseAPI {
 function Get-PendingEnrollments {
     Write-Log "Récupération des inscriptions en attente..."
     
-    $enrollments = Invoke-SupabaseAPI -Endpoint "pending_enrollments_view?status=eq.pending&order=requested_at.asc"
-    
-    Write-Log "Trouvé $($enrollments.Count) inscription(s) en attente"
-    return $enrollments
+    # Requête directe sur la table avec jointures
+    try {
+        # Récupérer les inscriptions en attente
+        $enrollments = Invoke-SupabaseAPI -Endpoint "pending_sharepoint_enrollments?status=eq.pending&order=requested_at.asc&select=*"
+        
+        if ($enrollments.Count -eq 0) {
+            Write-Log "Trouvé 0 inscription(s) en attente"
+            return @()
+        }
+        
+        # Enrichir avec les données utilisateur et site
+        $enrichedEnrollments = @()
+        foreach ($enrollment in $enrollments) {
+            # Récupérer les détails de l'utilisateur
+            $user = Invoke-SupabaseAPI -Endpoint "users?id=eq.$($enrollment.user_id)&select=display_name,email,user_principal_name,object_id"
+            
+            # Récupérer les détails du site
+            $site = Invoke-SupabaseAPI -Endpoint "sharepoint_sites?id=eq.$($enrollment.site_id)&select=name,url"
+            
+            if ($user.Count -gt 0 -and $site.Count -gt 0) {
+                $enriched = @{
+                    id = $enrollment.id
+                    user_id = $enrollment.user_id
+                    site_id = $enrollment.site_id
+                    status = $enrollment.status
+                    requested_at = $enrollment.requested_at
+                    requested_by = $enrollment.requested_by
+                    display_name = $user[0].display_name
+                    email = $user[0].email
+                    user_principal_name = $user[0].user_principal_name
+                    object_id = $user[0].object_id
+                    site_name = $site[0].name
+                    site_url = $site[0].url
+                }
+                $enrichedEnrollments += New-Object PSObject -Property $enriched
+            }
+        }
+        
+        Write-Log "Trouvé $($enrichedEnrollments.Count) inscription(s) en attente"
+        return $enrichedEnrollments
+        
+    } catch {
+        Write-Log "Erreur lors de la récupération: $_" "ERROR"
+        return @()
+    }
 }
 
 # Fonction pour marquer une inscription comme en traitement
@@ -107,7 +148,13 @@ function Add-UserToSharePointSite {
     
     try {
         Write-Log "Connexion au site: $SiteUrl"
-        Connect-PnPOnline -Url $SiteUrl -Interactive
+        
+        # Utiliser votre App Registration existante
+        $ClientId = "fa7b7ac8-f43d-4321-ac90-aca039da2f08"
+        $TenantId = "718110a6-919e-4290-a9fb-89c4c942b6e1"
+        
+        # Connexion interactive avec votre App ID
+        Connect-PnPOnline -Url $SiteUrl -Interactive -ClientId $ClientId -Tenant $TenantId
         
         Write-Log "Ajout de l'utilisateur: $UserPrincipalName au groupe: $GroupName"
         

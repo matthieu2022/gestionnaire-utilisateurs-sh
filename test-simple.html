@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Supabase Simple</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Test Connexion Supabase</h1>
+    <button onclick="tester()">Tester Connexion</button>
+    <pre id="resultat"></pre>
+
+    <script>
+        async function tester() {
+            const resultat = document.getElementById('resultat');
+            resultat.textContent = 'Test en cours...\n';
+
+            // Vérifier que Supabase est chargé
+            if (!window.supabase) {
+                resultat.textContent = '❌ Supabase JS non chargé!';
+                return;
+            }
+
+            resultat.textContent += '✅ Supabase JS chargé\n';
+
+            // Créer le client
+            const { createClient } = window.supabase;
+            const client = createClient(
+                'https://neaxxyzhggofkmdpfgjg.supabase.co',
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5lYXh4eXpoZ2dvZmttZHBmZ2pnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2OTgzMzUsImV4cCI6MjA3NDI3NDMzNX0.2crri7mSdeHVHhun9hcu2w3j_xlc4J16-bhxTnABhYk'
+            );
+
+            resultat.textContent += '✅ Client créé\n';
+
+            // Test users
+            const { data: users, error: usersError } = await client.from('users').select('*').limit(5);
+            if (usersError) {
+                resultat.textContent += `❌ Erreur users: ${usersError.message}\n`;
+            } else {
+                resultat.textContent += `✅ Users: ${users.length} trouvés\n`;
+                resultat.textContent += JSON.stringify(users[0], null, 2) + '\n';
+            }
+
+            // Test sites
+            const { data: sites, error: sitesError } = await client.from('sharepoint_sites').select('*');
+            if (sitesError) {
+                resultat.textContent += `❌ Erreur sites: ${sitesError.message}\n`;
+            } else {
+                resultat.textContent += `✅ Sites: ${sites.length} trouvés\n`;
+            }
+        }
+    </script>
+</body>
+</html>

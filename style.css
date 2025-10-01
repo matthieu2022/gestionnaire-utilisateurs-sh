@@ -50,6 +50,7 @@ body {
     gap: 0.5rem;
     z-index: 1000;
     animation: slideIn 0.3s ease-out;
+    max-width: 400px;
 }
 
 .notification.hidden {
@@ -69,6 +70,11 @@ body {
 .notification.info {
     border-left: 4px solid var(--primary);
     color: var(--primary);
+}
+
+.notification.warning {
+    border-left: 4px solid var(--warning);
+    color: var(--warning);
 }
 
 @keyframes slideIn {
@@ -289,11 +295,47 @@ body {
     background: var(--primary-dark);
 }
 
+.btn-secondary {
+    background: var(--gray-200);
+    color: var(--gray-700);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--gray-300);
+}
+
 /* Configuration */
 .config-grid {
     display: grid;
     grid-template-columns: 1fr 1fr auto;
     gap: 1rem;
+}
+
+/* Microsoft Controls */
+.microsoft-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.microsoft-status {
+    font-size: 0.875rem;
+    color: var(--success);
+    font-weight: 500;
+}
+
+.help-text {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.help-text i {
+    color: var(--warning);
 }
 
 /* Actions d'inscription */
@@ -545,6 +587,11 @@ body {
 .footer-info {
     color: var(--gray-400);
     margin-top: 0.25rem;
+}
+
+/* Animation spinning */
+.spinning {
+    animation: spin 1s linear infinite;
 }
 
 /* Responsive */

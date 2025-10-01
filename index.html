@@ -11,8 +11,6 @@
     <script src="https://unpkg.com/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
     <!-- Microsoft Authentication Library -->
     <script src="https://alcdn.msauth.net/browser/2.38.1/js/msal-browser.min.js"></script>
-
-
 </head>
 <body>
     <div class="app-container">
@@ -28,7 +26,7 @@
                         <i data-lucide="users"></i>
                         Gestionnaire d'Apprenants Non Licenciés
                     </h1>
-                    <p class="subtitle">Interface de gestion avec Supabase - Déployé sur Netlify</p>
+                    <p class="subtitle">Interface de gestion avec Supabase + Microsoft Graph API</p>
                 </div>
                 <div class="connection-status" id="connectionStatus">
                     <span class="status-dot offline"></span>
@@ -87,7 +85,7 @@
                         type="text" 
                         id="supabaseUrl" 
                         class="input" 
-                        placeholder="https://sharepoint-invite-sh.supabase.co"
+                        placeholder="https://votre-projet.supabase.co"
                         value="https://neaxxyzhggofkmdpfgjg.supabase.co"
                     >
                     <input 
@@ -103,7 +101,10 @@
                     </button>
                 </div>
             </div>
-             <div class="card">
+        </section>
+
+        <!-- Connexion Microsoft 365 -->
+        <section class="card">
             <div class="card-header">
                 <h2>
                     <i data-lucide="shield"></i>
@@ -111,16 +112,23 @@
                 </h2>
             </div>
             <div class="card-body">
-                <button id="btnLoginMicrosoft" class="btn btn-primary">
-                    <i data-lucide="log-in"></i>
-                    Se connecter avec Microsoft
-                </button>
-                <span id="microsoftStatus" class="ml-4"></span>
-            </div>
+                <div class="microsoft-controls">
+                    <button id="btnLoginMicrosoft" class="btn btn-primary">
+                        <i data-lucide="log-in"></i>
+                        Se connecter avec Microsoft
+                    </button>
+                    <button id="btnLogoutMicrosoft" class="btn btn-secondary hidden">
+                        <i data-lucide="log-out"></i>
+                        Se déconnecter
+                    </button>
+                    <span id="microsoftStatus" class="microsoft-status"></span>
+                </div>
+                <p class="help-text">
+                    <i data-lucide="alert-circle"></i>
+                    Requis pour effectuer les modifications réelles dans SharePoint
+                </p>
             </div>
         </section>
-
-
 
         <!-- Actions d'inscription -->
         <section class="card">
@@ -171,7 +179,6 @@
             </div>
             <div class="card-body">
                 <div id="usersGrid" class="users-grid">
-                    <!-- Les utilisateurs seront injectés ici par JavaScript -->
                     <div class="loading">
                         <div class="spinner"></div>
                         <p>Chargement des données...</p>
@@ -188,8 +195,8 @@
 
         <!-- Footer -->
         <footer class="footer">
-            <p>✅ Application HTML/CSS/JS + Supabase - Déployée sur Netlify</p>
-            <p class="footer-info">Répertoire GitHub | Version 1.0.0</p>
+            <p>Application HTML/CSS/JS + Supabase + Microsoft Graph API</p>
+            <p class="footer-info">Version 1.0.0 | Déployé sur Netlify</p>
         </footer>
 
     </div>
@@ -199,7 +206,6 @@
     <script src="microsoft-graph.js"></script>
     <script src="app.js"></script>
     <script>
-        // Initialiser les icônes Lucide
         lucide.createIcons();
     </script>
 </body>

@@ -1,7 +1,6 @@
 // microsoft-graph.js
 // Intégration Microsoft Graph API pour SharePoint
 
-// Configuration Azure AD
 const msalConfig = {
   auth: {
     clientId: "fa7b7ac8-f43d-4321-ac90-aca039da2f08",
@@ -15,7 +14,6 @@ const msalConfig = {
   },
 };
 
-// Permissions requises
 const loginRequest = {
   scopes: [
     "User.Read",
@@ -29,7 +27,6 @@ let msalInstance = null;
 let graphAccessToken = null;
 let currentAccount = null;
 
-// Initialiser MSAL
 async function initializeMSAL() {
   try {
     if (typeof msal === "undefined") {
@@ -39,7 +36,6 @@ async function initializeMSAL() {
     msalInstance = new msal.PublicClientApplication(msalConfig);
     await msalInstance.initialize();
 
-    // Vérifier si un utilisateur est déjà connecté
     const accounts = msalInstance.getAllAccounts();
     if (accounts.length > 0) {
       currentAccount = accounts[0];
@@ -53,7 +49,6 @@ async function initializeMSAL() {
   }
 }
 
-// Connexion Microsoft
 async function loginMicrosoft() {
   try {
     if (!msalInstance) {
@@ -75,7 +70,6 @@ async function loginMicrosoft() {
   }
 }
 
-// Déconnexion Microsoft
 async function logoutMicrosoft() {
   try {
     if (!msalInstance || !currentAccount) {
@@ -96,7 +90,6 @@ async function logoutMicrosoft() {
   }
 }
 
-// Obtenir un token d'accès
 async function getGraphToken() {
   if (!msalInstance) {
     throw new Error("MSAL non initialisé");
@@ -115,14 +108,12 @@ async function getGraphToken() {
     graphAccessToken = response.accessToken;
     return graphAccessToken;
   } catch (error) {
-    // Si le token silencieux échoue, redemander via popup
     const response = await msalInstance.acquireTokenPopup(loginRequest);
     graphAccessToken = response.accessToken;
     return graphAccessToken;
   }
 }
 
-// Appel générique à Microsoft Graph
 async function callGraphAPI(endpoint, method = "GET", body = null) {
   const token = await getGraphToken();
 
@@ -154,7 +145,6 @@ async function callGraphAPI(endpoint, method = "GET", body = null) {
     throw new Error(errorMessage);
   }
 
-  // Si la réponse est vide (204 No Content)
   if (response.status === 204) {
     return { success: true };
   }
@@ -162,7 +152,6 @@ async function callGraphAPI(endpoint, method = "GET", body = null) {
   return await response.json();
 }
 
-// Obtenir le site ID depuis l'URL SharePoint
 async function getSiteIdFromUrl(siteUrl) {
   try {
     const url = new URL(siteUrl);
@@ -177,23 +166,18 @@ async function getSiteIdFromUrl(siteUrl) {
   }
 }
 
-// Ajouter un utilisateur à un site SharePoint
 async function addUserToSharePointSite(userEmail, siteUrl) {
   try {
-    // 1. Obtenir le site ID
     const siteId = await getSiteIdFromUrl(siteUrl);
     console.log("Site ID:", siteId);
 
-    // 2. Récupérer l'utilisateur par email
     const user = await callGraphAPI(`/users/${userEmail}`);
     console.log("Utilisateur trouvé:", user.displayName);
 
-    // 3. Ajouter l'utilisateur au groupe de membres du site
-    // Note: SharePoint utilise des groupes pour gérer les permissions
     const result = await callGraphAPI(`/sites/${siteId}/members`, "POST", {
       "@odata.type": "#microsoft.graph.user",
       id: user.id,
-      roles: ["member"], // ou 'owner', 'visitor'
+      roles: ["member"],
     });
 
     return {
@@ -211,7 +195,6 @@ async function addUserToSharePointSite(userEmail, siteUrl) {
   }
 }
 
-// Retirer un utilisateur d'un site SharePoint
 async function removeUserFromSharePointSite(userEmail, siteUrl) {
   try {
     const siteId = await getSiteIdFromUrl(siteUrl);
@@ -232,7 +215,6 @@ async function removeUserFromSharePointSite(userEmail, siteUrl) {
   }
 }
 
-// Lister les membres d'un site
 async function listSiteMembers(siteUrl) {
   try {
     const siteId = await getSiteIdFromUrl(siteUrl);
@@ -252,7 +234,6 @@ async function listSiteMembers(siteUrl) {
   }
 }
 
-// Récupérer les infos de l'utilisateur connecté
 async function getCurrentUser() {
   try {
     const user = await callGraphAPI("/me");
@@ -262,12 +243,10 @@ async function getCurrentUser() {
   }
 }
 
-// Vérifier si l'utilisateur est connecté
 function isLoggedIn() {
   return currentAccount !== null && msalInstance !== null;
 }
 
-// Exporter les fonctions
 window.MicrosoftGraph = {
   initializeMSAL,
   loginMicrosoft,

@@ -1,3 +1,4 @@
+// supabase-client.js
 // Configuration Supabase
 let supabaseClient = null;
 
@@ -79,7 +80,6 @@ async function fetchStats() {
   }
 
   try {
-    // Nombre total d'utilisateurs
     const { count: totalUsers, error: usersError } = await supabaseClient
       .from("users")
       .select("*", { count: "exact", head: true })
@@ -87,7 +87,6 @@ async function fetchStats() {
 
     if (usersError) throw usersError;
 
-    // Nombre total d'inscriptions actives
     const { count: totalEnrollments, error: enrollmentsError } =
       await supabaseClient
         .from("user_site_enrollments")
@@ -96,7 +95,6 @@ async function fetchStats() {
 
     if (enrollmentsError) throw enrollmentsError;
 
-    // Nombre total de sites
     const { count: totalSites, error: sitesError } = await supabaseClient
       .from("sharepoint_sites")
       .select("*", { count: "exact", head: true })

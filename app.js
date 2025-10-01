@@ -1,3 +1,4 @@
+// app.js
 // État de l'application
 const appState = {
   users: [],
@@ -7,16 +8,9 @@ const appState = {
   connected: false,
 };
 
-  // État Microsoft
-  let microsoftConnected = false;
-  let microsoftAccount = null;
-
-  // Éléments Microsoft
-  const microsoftElements = {
-      btnLogin: document.getElementById('btnLoginMicrosoft'),
-      btnLogout: document.getElementById('btnLogoutMicrosoft'),
-      status: document.getElementById('microsoftStatus')
-  };
+// État Microsoft
+let microsoftConnected = false;
+let microsoftAccount = null;
 
 // Éléments DOM
 const elements = {
@@ -37,6 +31,13 @@ const elements = {
   usersGrid: document.getElementById("usersGrid"),
   emptyState: document.getElementById("emptyState"),
   userCount: document.getElementById("userCount"),
+};
+
+// Éléments Microsoft
+const microsoftElements = {
+  btnLogin: document.getElementById("btnLoginMicrosoft"),
+  btnLogout: document.getElementById("btnLogoutMicrosoft"),
+  status: document.getElementById("microsoftStatus"),
 };
 
 // Notification
@@ -82,17 +83,13 @@ async function handleConnect() {
   lucide.createIcons();
 
   try {
-    // Initialiser le client
     initSupabase(url, key);
 
-    // Tester la connexion
     const { connected, error } = await testConnection();
 
     if (connected) {
       updateConnectionStatus(true);
       showNotification("Connexion Supabase réussie !", "success");
-
-      // Charger les données
       await loadAllData();
     } else {
       updateConnectionStatus(false, error);
@@ -111,7 +108,6 @@ async function handleConnect() {
 // Charger toutes les données
 async function loadAllData() {
   try {
-    // Charger en parallèle
     const [users, sites, stats] = await Promise.all([
       fetchUsersWithEnrollments(),
       fetchActiveSites(),
@@ -121,7 +117,6 @@ async function loadAllData() {
     appState.users = users;
     appState.sites = sites;
 
-    // Mettre à jour l'interface
     updateStats(stats);
     renderSites();
     renderUsers();
@@ -167,10 +162,7 @@ function renderUsers() {
     .map((user) => createUserCard(user))
     .join("");
 
-  // Réinitialiser les icônes Lucide
   lucide.createIcons();
-
-  // Ajouter les event listeners
   attachUserCardListeners();
 }
 
@@ -268,7 +260,6 @@ function createUserCard(user) {
 
 // Attacher les event listeners aux cartes utilisateur
 function attachUserCardListeners() {
-  // Sélection utilisateur (clic sur carte)
   document.querySelectorAll(".user-card").forEach((card) => {
     card.addEventListener("click", (e) => {
       if (
@@ -286,7 +277,6 @@ function attachUserCardListeners() {
     });
   });
 
-  // Checkbox
   document.querySelectorAll(".user-checkbox").forEach((checkbox) => {
     checkbox.addEventListener("change", (e) => {
       e.stopPropagation();
@@ -295,7 +285,6 @@ function attachUserCardListeners() {
     });
   });
 
-  // Boutons de désinscription
   document.querySelectorAll(".btn-remove").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
@@ -325,7 +314,6 @@ function updateSelectionUI() {
   }`;
   elements.btnEnroll.disabled = count === 0 || !elements.siteSelect.value;
 
-  // Mettre à jour les cartes
   document.querySelectorAll(".user-card").forEach((card) => {
     const userId = card.dataset.userId;
     const checkbox = card.querySelector(".user-checkbox");
@@ -357,43 +345,60 @@ async function handleEnrollUsers() {
 
   let successCount = 0;
   let errorCount = 0;
+  const site = appState.sites.find((s) => s.id === siteId);
 
   try {
-    // Inscrire chaque utilisateur sélectionné
     for (const userId of appState.selectedUsers) {
-      const result = await enrollUserToSite(userId, siteId);
-      if (result.success) {
+      try {
+        const user = appState.users.find((u) => u.user_id === userId);
+
+        // 1. Enregistrer dans Supabase
+        const supabaseResult = await enrollUserToSite(userId, siteId);
+
+        // 2. Si Microsoft connecté, effectuer l'action réelle SharePoint
+        if (microsoftConnected && window.MicrosoftGraph) {
+          const graphResult =
+            await window.MicrosoftGraph.addUserToSharePointSite(
+              user.email,
+              site.url
+            );
+
+          if (graphResult.success) {
+            showNotification(
+              `✅ ${user.display_name} ajouté à SharePoint`,
+              "success"
+            );
+          } else {
+            showNotification(
+              `⚠️ ${user.display_name}: ${graphResult.error}`,
+              "warning"
+            );
+          }
+        }
+
         successCount++;
-      } else {
+      } catch (error) {
+        console.error(`Erreur pour ${userId}:`, error);
         errorCount++;
       }
     }
 
-    // Afficher le résultat
-    if (successCount > 0) {
-      showNotification(
-        `${successCount} apprenant${successCount > 1 ? "s" : ""} inscrit${
-          successCount > 1 ? "s" : ""
-        } avec succès`,
-        "success"
-      );
-    }
-    if (errorCount > 0) {
-      showNotification(
-        `${errorCount} erreur${errorCount > 1 ? "s" : ""}`,
-        "error"
-      );
-    }
-
-    // Réinitialiser la sélection
     appState.selectedUsers.clear();
     elements.siteSelect.value = "";
 
-    // Recharger les données
+    if (successCount > 0) {
+      const message = microsoftConnected
+        ? `${successCount} inscription(s) effectuée(s) dans SharePoint`
+        : `${successCount} inscription(s) enregistrée(s) (Microsoft non connecté)`;
+      showNotification(message, "success");
+    }
+    if (errorCount > 0) {
+      showNotification(`${errorCount} erreur(s)`, "error");
+    }
+
     await loadAllData();
   } catch (error) {
-    console.error("Erreur inscription en masse:", error);
-    showNotification("Erreur lors de l'inscription", "error");
+    showNotification("Erreur: " + error.message, "error");
   } finally {
     elements.btnEnroll.disabled = false;
     elements.btnEnroll.innerHTML = '<i data-lucide="plus"></i> Inscrire';
@@ -408,20 +413,41 @@ async function handleUnenroll(userId, siteId) {
   }
 
   try {
+    const user = appState.users.find((u) => u.user_id === userId);
+    const site = appState.sites.find((s) => s.id === parseInt(siteId));
+
+    // 1. Désinscrire dans Supabase
     const result = await unenrollUserFromSite(userId, parseInt(siteId));
+
+    // 2. Si Microsoft connecté, désinscrire de SharePoint
+    if (microsoftConnected && window.MicrosoftGraph) {
+      const graphResult =
+        await window.MicrosoftGraph.removeUserFromSharePointSite(
+          user.email,
+          site.url
+        );
+
+      if (graphResult.success) {
+        showNotification(
+          `✅ ${user.display_name} retiré de SharePoint`,
+          "success"
+        );
+      } else {
+        showNotification(
+          `⚠️ Erreur SharePoint: ${graphResult.error}`,
+          "warning"
+        );
+      }
+    }
 
     if (result.success) {
       showNotification("Apprenant désinscrit avec succès", "success");
       await loadAllData();
     } else {
-      showNotification(
-        "Erreur lors de la désinscription: " + result.error,
-        "error"
-      );
+      showNotification("Erreur: " + result.error, "error");
     }
   } catch (error) {
-    console.error("Erreur désinscription:", error);
-    showNotification("Erreur lors de la désinscription", "error");
+    showNotification("Erreur: " + error.message, "error");
   }
 }
 
@@ -431,7 +457,7 @@ function handleSearch() {
   renderUsers();
 }
 
-// Event Listeners
+// Event Listeners Supabase
 elements.btnConnect.addEventListener("click", handleConnect);
 elements.btnEnroll.addEventListener("click", handleEnrollUsers);
 elements.searchInput.addEventListener("input", handleSearch);
@@ -441,26 +467,52 @@ elements.siteSelect.addEventListener("change", () => {
     appState.selectedUsers.size === 0 || !elements.siteSelect.value;
 });
 
+// Event listeners Microsoft
+microsoftElements.btnLogin.addEventListener("click", async () => {
+  const result = await window.MicrosoftGraph.loginMicrosoft();
+  if (result.success) {
+    microsoftConnected = true;
+    microsoftAccount = result.account;
+    microsoftElements.status.textContent = `✅ Connecté: ${result.account.username}`;
+    microsoftElements.btnLogin.classList.add("hidden");
+    microsoftElements.btnLogout.classList.remove("hidden");
+    showNotification("Connexion Microsoft réussie !", "success");
+  } else {
+    showNotification("Erreur: " + result.error, "error");
+  }
+});
+
+microsoftElements.btnLogout.addEventListener("click", async () => {
+  await window.MicrosoftGraph.logoutMicrosoft();
+  microsoftConnected = false;
+  microsoftAccount = null;
+  microsoftElements.status.textContent = "";
+  microsoftElements.btnLogin.classList.remove("hidden");
+  microsoftElements.btnLogout.classList.add("hidden");
+  showNotification("Déconnexion réussie", "info");
+});
+
 // Initialisation au chargement de la page
 document.addEventListener("DOMContentLoaded", () => {
   lucide.createIcons();
 
-  // Auto-connexion si les champs sont pré-remplis
+  // Initialiser Microsoft au chargement
+  if (window.MicrosoftGraph) {
+    window.MicrosoftGraph.initializeMSAL().then((result) => {
+      if (result.success && result.account) {
+        microsoftConnected = true;
+        microsoftAccount = result.account;
+        microsoftElements.status.textContent = `✅ ${result.account.username}`;
+        microsoftElements.btnLogin.classList.add("hidden");
+        microsoftElements.btnLogout.classList.remove("hidden");
+      }
+    });
+  }
+
+  // Auto-connexion Supabase si les champs sont pré-remplis
   if (elements.supabaseUrl.value && elements.supabaseKey.value) {
     setTimeout(() => {
       handleConnect();
     }, 500);
   }
 });
-
-// Ajouter le style pour l'icône qui tourne
-const style = document.createElement("style");
-style.textContent = `
-    .spinning {
-        animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-        to { transform: rotate(360deg); }
-    }
-`;
-document.head.appendChild(style);

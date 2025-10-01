@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestionnaire d'Apprenants Non Licenciés</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- Notification -->
+        <div id="notification" class="notification hidden"></div>
+
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>
+                        <i data-lucide="users"></i>
+                        Gestionnaire d'Apprenants Non Licenciés
+                    </h1>
+                    <p class="subtitle">Interface de gestion avec Supabase - Déployé sur Netlify</p>
+                </div>
+                <div class="connection-status" id="connectionStatus">
+                    <span class="status-dot offline"></span>
+                    <span class="status-text">Non connecté</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Statistiques -->
+        <section class="stats-container">
+            <div class="stat-card stat-users">
+                <div class="stat-icon">
+                    <i data-lucide="users"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Apprenants</h3>
+                    <p class="stat-number" id="statUsers">0</p>
+                    <span class="stat-label">Non licenciés</span>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-enrollments">
+                <div class="stat-icon">
+                    <i data-lucide="check-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Inscriptions</h3>
+                    <p class="stat-number" id="statEnrollments">0</p>
+                    <span class="stat-label">Actives</span>
+                </div>
+            </div>
+            
+            <div class="stat-card stat-sites">
+                <div class="stat-icon">
+                    <i data-lucide="database"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>Sites</h3>
+                    <p class="stat-number" id="statSites">0</p>
+                    <span class="stat-label">SharePoint</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Configuration Supabase -->
+        <section class="card">
+            <div class="card-header">
+                <h2>
+                    <i data-lucide="database"></i>
+                    Configuration Supabase
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="config-grid">
+                    <input 
+                        type="text" 
+                        id="supabaseUrl" 
+                        class="input" 
+                        placeholder="https://votre-projet.supabase.co"
+                        value="https://shxalpzuumzlaupdoaqq.supabase.co"
+                    >
+                    <input 
+                        type="password" 
+                        id="supabaseKey" 
+                        class="input" 
+                        placeholder="Clé publique anon"
+                        value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNoeGFscHp1dW16bGF1cGRvYXFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIyMzkyOTUsImV4cCI6MjA2NzgxNTI5NX0.p7pPFsNI1Os_XT6zTv8H5D24axSm0H_vddT5K5xhjnE"
+                    >
+                    <button id="btnConnect" class="btn btn-primary">
+                        <i data-lucide="database"></i>
+                        Connecter
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Actions d'inscription -->
+        <section class="card">
+            <div class="card-header">
+                <h2>
+                    <i data-lucide="plus"></i>
+                    Inscription en masse
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="enrollment-actions">
+                    <div class="form-group flex-grow">
+                        <label>Site SharePoint de destination</label>
+                        <select id="siteSelect" class="input">
+                            <option value="">Sélectionner un site...</option>
+                        </select>
+                    </div>
+                    <div class="enrollment-info">
+                        <span class="selected-count" id="selectedCount">0 sélectionnés</span>
+                        <button id="btnEnroll" class="btn btn-primary" disabled>
+                            <i data-lucide="plus"></i>
+                            Inscrire
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Barre de recherche -->
+        <section class="card">
+            <div class="card-body">
+                <div class="search-container">
+                    <i data-lucide="search"></i>
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        class="input search-input" 
+                        placeholder="Rechercher par nom ou email..."
+                    >
+                </div>
+            </div>
+        </section>
+
+        <!-- Liste des utilisateurs -->
+        <section class="card">
+            <div class="card-header">
+                <h2>Utilisateurs non licenciés (<span id="userCount">0</span>)</h2>
+            </div>
+            <div class="card-body">
+                <div id="usersGrid" class="users-grid">
+                    <!-- Les utilisateurs seront injectés ici par JavaScript -->
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Chargement des données...</p>
+                    </div>
+                </div>
+                
+                <div id="emptyState" class="empty-state hidden">
+                    <i data-lucide="users" class="empty-icon"></i>
+                    <h3>Aucun apprenant trouvé</h3>
+                    <p>Connectez-vous à Supabase et importez vos données</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>✅ Application HTML/CSS/JS + Supabase - Déployée sur Netlify</p>
+            <p class="footer-info">Répertoire GitHub | Version 1.0.0</p>
+        </footer>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="supabase-client.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Initialiser les icônes Lucide
+        lucide.createIcons();
+    </script>
+</body>
+</html>

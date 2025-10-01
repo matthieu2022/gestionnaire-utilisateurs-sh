@@ -166,31 +166,71 @@ async function getSiteIdFromUrl(siteUrl) {
   }
 }
 
-async function addUserToSharePointSite(userEmail, siteUrl) {
+async function addUserToSharePointSite(
+  userEmail,
+  siteUrl,
+  userObjectId = null
+) {
   try {
     const siteId = await getSiteIdFromUrl(siteUrl);
     console.log("Site ID:", siteId);
 
-    const user = await callGraphAPI(`/users/${userEmail}`);
-    console.log("Utilisateur trouvé:", user.displayName);
+    let user = null;
 
-    const result = await callGraphAPI(`/sites/${siteId}/members`, "POST", {
-      "@odata.type": "#microsoft.graph.user",
-      id: user.id,
-      roles: ["member"],
-    });
+    // Si on a l'object_id, l'utiliser DIRECTEMENT
+    if (userObjectId) {
+      console.log("Récupération utilisateur via object_id:", userObjectId);
+      user = await callGraphAPI(`/users/${userObjectId}`);
+      console.log("Utilisateur trouvé:", user.displayName, user.id);
+    } else {
+      throw new Error("Object ID requis pour les utilisateurs invités");
+    }
 
-    return {
-      success: true,
-      data: result,
-      message: `${user.displayName} ajouté au site SharePoint`,
-    };
+    // Tenter d'ajouter au site via invitation/partage
+    try {
+      const invitation = await callGraphAPI(
+        `/sites/${siteId}/permissions/grant`,
+        "POST",
+        {
+          recipients: [{ objectId: user.id }],
+          roles: ["write"],
+          requireSignIn: true,
+        }
+      );
+
+      return {
+        success: true,
+        data: invitation,
+        message: `${user.displayName} invité au site SharePoint`,
+      };
+    } catch (grantError) {
+      console.log(
+        "Grant failed, trying direct member add:",
+        grantError.message
+      );
+
+      // Alternative: essayer l'ajout direct comme membre
+      const member = await callGraphAPI(
+        `/groups/${siteId}/members/$ref`,
+        "POST",
+        {
+          "@odata.id": `https://graph.microsoft.com/v1.0/users/${user.id}`,
+        }
+      );
+
+      return {
+        success: true,
+        data: member,
+        message: `${user.displayName} ajouté au site SharePoint`,
+      };
+    }
   } catch (error) {
     console.error("Erreur ajout utilisateur SharePoint:", error);
     return {
       success: false,
       error: error.message,
-      details: error,
+      suggestion:
+        "Pour les utilisateurs invités, utilisez le portail SharePoint Admin ou envoyez une invitation de partage",
     };
   }
 }

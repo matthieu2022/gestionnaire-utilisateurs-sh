@@ -7,6 +7,17 @@ const appState = {
   connected: false,
 };
 
+  // État Microsoft
+  let microsoftConnected = false;
+  let microsoftAccount = null;
+
+  // Éléments Microsoft
+  const microsoftElements = {
+      btnLogin: document.getElementById('btnLoginMicrosoft'),
+      btnLogout: document.getElementById('btnLogoutMicrosoft'),
+      status: document.getElementById('microsoftStatus')
+  };
+
 // Éléments DOM
 const elements = {
   notification: document.getElementById("notification"),

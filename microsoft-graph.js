@@ -1,11 +1,12 @@
 // microsoft-graph.js
-import { PublicClientApplication } from "@azure/msal-browser";
+// Intégration Microsoft Graph API pour SharePoint
 
-// Configuration MSAL (Microsoft Authentication Library)
+// Configuration Azure AD
 const msalConfig = {
   auth: {
-    clientId: "VOTRE-CLIENT-ID-AZURE",
-    authority: "https://login.microsoftonline.com/VOTRE-TENANT-ID",
+    clientId: "fa7b7ac8-f43d-4321-ac90-aca039da2f08",
+    authority:
+      "https://login.microsoftonline.com/718110a6-919e-4290-a9fb-89c4c942b6e1",
     redirectUri: window.location.origin,
   },
   cache: {
@@ -14,34 +15,89 @@ const msalConfig = {
   },
 };
 
+// Permissions requises
 const loginRequest = {
-  scopes: ["User.Read", "Sites.ReadWrite.All", "Group.ReadWrite.All"],
+  scopes: [
+    "User.Read",
+    "Sites.ReadWrite.All",
+    "Group.ReadWrite.All",
+    "Directory.Read.All",
+  ],
 };
 
 let msalInstance = null;
 let graphAccessToken = null;
+let currentAccount = null;
 
 // Initialiser MSAL
-export async function initializeMSAL() {
-  msalInstance = new PublicClientApplication(msalConfig);
-  await msalInstance.initialize();
-  return msalInstance;
+async function initializeMSAL() {
+  try {
+    if (typeof msal === "undefined") {
+      throw new Error("MSAL library not loaded");
+    }
+
+    msalInstance = new msal.PublicClientApplication(msalConfig);
+    await msalInstance.initialize();
+
+    // Vérifier si un utilisateur est déjà connecté
+    const accounts = msalInstance.getAllAccounts();
+    if (accounts.length > 0) {
+      currentAccount = accounts[0];
+      return { success: true, account: currentAccount };
+    }
+
+    return { success: true, account: null };
+  } catch (error) {
+    console.error("Erreur initialisation MSAL:", error);
+    return { success: false, error: error.message };
+  }
 }
 
-// Connexion utilisateur
-export async function loginMicrosoft() {
+// Connexion Microsoft
+async function loginMicrosoft() {
   try {
+    if (!msalInstance) {
+      await initializeMSAL();
+    }
+
     const response = await msalInstance.loginPopup(loginRequest);
+    currentAccount = response.account;
     graphAccessToken = response.accessToken;
-    return { success: true, account: response.account };
+
+    return {
+      success: true,
+      account: currentAccount,
+      token: graphAccessToken,
+    };
   } catch (error) {
     console.error("Erreur connexion Microsoft:", error);
     return { success: false, error: error.message };
   }
 }
 
+// Déconnexion Microsoft
+async function logoutMicrosoft() {
+  try {
+    if (!msalInstance || !currentAccount) {
+      return { success: true };
+    }
+
+    await msalInstance.logoutPopup({
+      account: currentAccount,
+    });
+
+    currentAccount = null;
+    graphAccessToken = null;
+
+    return { success: true };
+  } catch (error) {
+    console.error("Erreur déconnexion:", error);
+    return { success: false, error: error.message };
+  }
+}
+
 // Obtenir un token d'accès
-export async function getGraphToken() {
+async function getGraphToken() {
   if (!msalInstance) {
     throw new Error("MSAL non initialisé");
   }
@@ -59,7 +115,7 @@ export async function getGraphToken() {
     graphAccessToken = response.accessToken;
     return graphAccessToken;
   } catch (error) {
-    // Si le token silencieux échoue, redemander la connexion
+    // Si le token silencieux échoue, redemander via popup
     const response = await msalInstance.acquireTokenPopup(loginRequest);
     graphAccessToken = response.accessToken;
     return graphAccessToken;
@@ -78,7 +134,7 @@ async function callGraphAPI(endpoint, method = "GET", body = null) {
     },
   };
 
-  if (body && (method === "POST" || method === "PATCH")) {
+  if (body && (method === "POST" || method === "PATCH" || method === "PUT")) {
     options.body = JSON.stringify(body);
   }
 
@@ -88,70 +144,138 @@ async function callGraphAPI(endpoint, method = "GET", body = null) {
   );
 
   if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error.message);
+    let errorMessage = `HTTP ${response.status}`;
+    try {
+      const error = await response.json();
+      errorMessage = error.error?.message || errorMessage;
+    } catch (e) {
+      errorMessage = await response.text();
+    }
+    throw new Error(errorMessage);
+  }
+
+  // Si la réponse est vide (204 No Content)
+  if (response.status === 204) {
+    return { success: true };
   }
 
   return await response.json();
 }
 
-// Ajouter un utilisateur à un site SharePoint
-export async function addUserToSharePointSite(userEmail, siteUrl) {
+// Obtenir le site ID depuis l'URL SharePoint
+async function getSiteIdFromUrl(siteUrl) {
   try {
-    // 1. Extraire le site ID depuis l'URL
+    const url = new URL(siteUrl);
+    const hostname = url.hostname;
+    const sitePath = url.pathname;
+
+    const site = await callGraphAPI(`/sites/${hostname}:${sitePath}`);
+    return site.id;
+  } catch (error) {
+    console.error("Erreur récupération site ID:", error);
+    throw error;
+  }
+}
+
+// Ajouter un utilisateur à un site SharePoint
+async function addUserToSharePointSite(userEmail, siteUrl) {
+  try {
+    // 1. Obtenir le site ID
     const siteId = await getSiteIdFromUrl(siteUrl);
+    console.log("Site ID:", siteId);
 
     // 2. Récupérer l'utilisateur par email
     const user = await callGraphAPI(`/users/${userEmail}`);
+    console.log("Utilisateur trouvé:", user.displayName);
 
-    // 3. Ajouter l'utilisateur au site
+    // 3. Ajouter l'utilisateur au groupe de membres du site
+    // Note: SharePoint utilise des groupes pour gérer les permissions
     const result = await callGraphAPI(`/sites/${siteId}/members`, "POST", {
       "@odata.type": "#microsoft.graph.user",
       id: user.id,
+      roles: ["member"], // ou 'owner', 'visitor'
     });
 
-    return { success: true, data: result };
+    return {
+      success: true,
+      data: result,
+      message: `${user.displayName} ajouté au site SharePoint`,
+    };
   } catch (error) {
     console.error("Erreur ajout utilisateur SharePoint:", error);
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: error.message,
+      details: error,
+    };
   }
 }
 
 // Retirer un utilisateur d'un site SharePoint
-export async function removeUserFromSharePointSite(userEmail, siteUrl) {
+async function removeUserFromSharePointSite(userEmail, siteUrl) {
   try {
     const siteId = await getSiteIdFromUrl(siteUrl);
     const user = await callGraphAPI(`/users/${userEmail}`);
 
     await callGraphAPI(`/sites/${siteId}/members/${user.id}/$ref`, "DELETE");
 
-    return { success: true };
+    return {
+      success: true,
+      message: `${user.displayName} retiré du site SharePoint`,
+    };
   } catch (error) {
     console.error("Erreur retrait utilisateur SharePoint:", error);
-    return { success: false, error: error.message };
+    return {
+      success: false,
+      error: error.message,
+    };
   }
-}
-
-// Obtenir le site ID depuis l'URL
-async function getSiteIdFromUrl(siteUrl) {
-  // Extraire le hostname et le chemin du site
-  const url = new URL(siteUrl);
-  const hostname = url.hostname; // ex: neosphere83.sharepoint.com
-  const sitePath = url.pathname; // ex: /sites/RETAC20252026
-
-  // Appeler Graph pour obtenir le site
-  const site = await callGraphAPI(`/sites/${hostname}:${sitePath}`);
-
-  return site.id;
 }
 
 // Lister les membres d'un site
-export async function listSiteMembers(siteUrl) {
+async function listSiteMembers(siteUrl) {
   try {
     const siteId = await getSiteIdFromUrl(siteUrl);
     const members = await callGraphAPI(`/sites/${siteId}/members`);
-    return { success: true, data: members.value };
+
+    return {
+      success: true,
+      data: members.value || [],
+      count: members.value?.length || 0,
+    };
+  } catch (error) {
+    console.error("Erreur liste membres:", error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+}
+
+// Récupérer les infos de l'utilisateur connecté
+async function getCurrentUser() {
+  try {
+    const user = await callGraphAPI("/me");
+    return { success: true, data: user };
   } catch (error) {
     return { success: false, error: error.message };
   }
 }
+
+// Vérifier si l'utilisateur est connecté
+function isLoggedIn() {
+  return currentAccount !== null && msalInstance !== null;
+}
+
+// Exporter les fonctions
+window.MicrosoftGraph = {
+  initializeMSAL,
+  loginMicrosoft,
+  logoutMicrosoft,
+  addUserToSharePointSite,
+  removeUserFromSharePointSite,
+  listSiteMembers,
+  getCurrentUser,
+  isLoggedIn,
+  getAccount: () => currentAccount,
+};

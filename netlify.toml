@@ -21,6 +21,8 @@
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    # Permissions Policy pour Microsoft authentication
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
 # Cache des fichiers statiques
 [[headers]]
@@ -32,3 +34,11 @@
   for = "/*.js"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# CORS pour Microsoft Graph API
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"

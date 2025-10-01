@@ -184,11 +184,11 @@ try {
             Invoke-SupabaseAPI -Endpoint "enrollment_logs" -Method "POST" -Body $logBody
             
             $successCount++
-            Write-Log "✓ Inscription réussie" "SUCCESS"
+            Write-Log "Inscription réussie" "SUCCESS"
             
         } catch {
             $errorMsg = $_.Exception.Message
-            Write-Log "✗ Échec: $errorMsg" "ERROR"
+            Write-Log "Échec: $errorMsg" "ERROR"
             
             Set-EnrollmentFailed -EnrollmentId $enrollment.id -ErrorMessage $errorMsg
             

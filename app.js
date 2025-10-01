@@ -328,6 +328,59 @@ function updateSelectionUI() {
   });
 }
 
+  // Charger les inscriptions en attente
+  async function loadPendingEnrollments() {
+      try {
+          const { data, error } = await supabaseClient
+              .from('pending_enrollments_view')
+              .select('*')
+              .eq('status', 'pending')
+              .order('requested_at', { ascending: false });
+          
+          if (error) throw error;
+          
+          renderPendingEnrollments(data);
+      } catch (error) {
+          console.error('Erreur chargement inscriptions:', error);
+      }
+  }
+
+  // Afficher les inscriptions en attente
+  function renderPendingEnrollments(enrollments) {
+      const container = document.getElementById('pendingEnrollmentsContainer');
+      
+      if (enrollments.length === 0) {
+          container.innerHTML = '<p class="text-gray-500">Aucune inscription en attente</p>';
+          return;
+      }
+      
+      container.innerHTML = `
+          <div class="space-y-3">
+              ${enrollments.map(e => `
+                  <div class="border border-orange-200 bg-orange-50 p-4 rounded-lg">
+                      <div class="flex justify-between items-start">
+                          <div>
+                              <h4 class="font-semibold">${e.display_name}</h4>
+                              <p class="text-sm text-gray-600">${e.email}</p>
+                              <p class="text-sm text-gray-600 mt-1">→ ${e.site_name}</p>
+                          </div>
+                          <span class="text-xs text-gray-500">
+                              ${new Date(e.requested_at).toLocaleString('fr-FR')}
+                          </span>
+                      </div>
+                  </div>
+              `).join('')}
+          </div>
+          <p class="text-sm text-gray-600 mt-4">
+              Total: <strong>${enrollments.length}</strong> inscription(s) en attente
+          </p>
+      `;
+  }
+
+  document.getElementById('btnRefreshPending').addEventListener('click', loadPendingEnrollments);
+
+
+
 // Gérer l'inscription en masse
 async function handleEnrollUsers() {
   const siteId = parseInt(elements.siteSelect.value);

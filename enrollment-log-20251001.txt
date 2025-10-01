@@ -1,0 +1,6 @@
+[2025-10-01 16:31:36] [INFO] ====== DÉBUT DU TRAITEMENT ======
+[2025-10-01 16:31:36] [INFO] Connexion à Supabase: https://neaxxyzhggofkmdpfgjg.supabase.co
+[2025-10-01 16:31:36] [WARN] Module PnP.PowerShell non trouvé. Installation...
+[2025-10-01 16:32:15] [INFO] Récupération des inscriptions en attente...
+[2025-10-01 16:32:15] [INFO] Trouvé 0 inscription(s) en attente
+[2025-10-01 16:32:15] [INFO] Aucune inscription à traiter

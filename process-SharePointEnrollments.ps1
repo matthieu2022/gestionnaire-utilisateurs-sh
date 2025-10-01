@@ -135,13 +135,25 @@ function Add-UserToSharePointSite {
 Write-Log "====== DÉBUT DU TRAITEMENT ======"
 Write-Log "Connexion à Supabase: $SupabaseUrl"
 
-# Vérifier que PnP PowerShell est installé
-if (-not (Get-Module -ListAvailable -Name "PnP.PowerShell")) {
-    Write-Log "Module PnP.PowerShell non trouvé. Installation..." "WARN"
-    Install-Module -Name "PnP.PowerShell" -Force -AllowClobber
-}
+# Vérifier la version de PowerShell et installer le bon module
+$psVersion = $PSVersionTable.PSVersion.Major
 
-Import-Module PnP.PowerShell
+if ($psVersion -lt 7) {
+    Write-Log "PowerShell version $psVersion détectée. Installation de PnP.PowerShell 1.12.0 (compatible PS 5.1)..." "WARN"
+    
+    if (-not (Get-Module -ListAvailable -Name "PnP.PowerShell" | Where-Object { $_.Version -like "1.12.*" })) {
+        Install-Module -Name "PnP.PowerShell" -RequiredVersion 1.12.0 -Force -AllowClobber -Scope CurrentUser
+    }
+    Import-Module PnP.PowerShell -RequiredVersion 1.12.0
+    
+} else {
+    Write-Log "PowerShell $psVersion détecté. Installation de la dernière version de PnP.PowerShell..." "INFO"
+    
+    if (-not (Get-Module -ListAvailable -Name "PnP.PowerShell")) {
+        Install-Module -Name "PnP.PowerShell" -Force -AllowClobber -Scope CurrentUser
+    }
+    Import-Module PnP.PowerShell
+}
 
 try {
     # Récupérer les inscriptions en attente
